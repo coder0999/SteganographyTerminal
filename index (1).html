@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة إخفاء وتشفير النصوص | Steganography Terminal</title>
+    <meta name="description" content="أداة ويب آمنة ومفتوحة المصدر لإخفاء رسالة سرية داخل نص ظاهر (إخفاء معلومات) مع طبقة تشفير قوية. تعمل بالكامل في متصفحك.">
+    <meta name="keywords" content="steganography, encryption, hide text, privacy, security, تشفير, إخفاء النص, أمان, خصوصية, أداة ويب, مفتوح المصدر, github">
+    <meta name="author" content="coder0999">
+    <meta name="google-site-verification" content="bp5RzogSLS97ZhQZYEY-5RZHPmeNO2Cd5ER1RGi7WAU" />
+
+    <style>
+        :root {
+            --background-color: #0d0d0d;
+            --text-color: #00ff41;
+            --border-color: #00ff41;
+            --button-bg-color: #1a1a1a;
+            --button-hover-bg-color: #00ff41;
+            --button-hover-text-color: #0d0d0d;
+            --font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: right;
+        }
+
+        .background-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12vw;
+            line-height: 1;
+            text-align: center;
+            color: rgba(0, 255, 65, 0.05);
+            font-weight: bold;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .version-number {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: var(--text-color);
+            opacity: 0.4;
+            z-index: 2;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 40px);
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+            background: rgba(13, 13, 13, 0.9);
+        }
+
+        h1 {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 5px var(--text-color);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: none; border: none; color: var(--text-color); padding: 10px 15px;
+            cursor: pointer; font-family: var(--font-family); font-size: 1rem; opacity: 0.6;
+        }
+        .tab-button.active { border-bottom: 2px solid var(--border-color); opacity: 1; }
+        .content { display: none; }
+        .content.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 1px; }
+
+        textarea {
+            width: 100%; background-color: var(--button-bg-color); border: 1px solid var(--border-color);
+            color: var(--text-color); padding: 10px; font-family: var(--font-family); font-size: 1rem;
+            resize: vertical; box-sizing: border-box; text-align: right;
+        }
+        textarea:focus { outline: none; box-shadow: 0 0 8px rgba(0, 255, 65, 0.5); }
+        .button-group { display: flex; gap: 15px; }
+        button { flex: 1; padding: 12px; background-color: var(--button-bg-color); border: 1px solid var(--border-color);
+            color: var(--text-color); font-family: var(--font-family); font-size: 1rem; cursor: pointer;
+            transition: background-color 0.3s, color 0.3s; text-transform: uppercase;
+        }
+        button:hover { background-color: var(--button-hover-bg-color); color: var(--button-hover-text-color); }
+        
+        .result-group { margin-top: 20px; }
+        .result-container {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+        .result-container textarea { flex-grow: 1; }
+        .copy-btn {
+            flex-shrink: 0;
+            padding: 10px 15px;
+        }
+
+        footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 255, 65, 0.2);
+            text-align: center; 
+            font-size: 0.9rem; 
+            color: var(--text-color); 
+            opacity: 0.8;
+        }
+        footer a { color: var(--text-color); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content { background: #0d0d0d; padding: 30px; border: 1px solid var(--border-color);
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.5); width: 90%; max-width: 700px; max-height: 85vh; overflow-y: auto;
+            text-align: center;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;
+        }
+        .modal-close { font-size: 2rem; color: var(--text-color); cursor: pointer; border: none; background: none; }
+        .modal-body p { line-height: 1.6; }
+        .agreement-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .agreement-section label { display: flex; align-items: center; cursor: pointer; font-size: 0.9rem; }
+        .agreement-section input[type="checkbox"] { margin-left: 10px; }
+        #confirmPolicy, #alertOkBtn { width: 50%; margin-top: 10px; }
+        #confirmPolicy:disabled { background: #333; color: #777; cursor: not-allowed; border-color: #555; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .main-wrapper { min-height: calc(100vh - 20px); }
+            .container { padding: 15px; }
+            h1 { font-size: 1.5rem; }
+            .background-text { font-size: 15vw; }
+            textarea { font-size: 0.9rem; }
+            .tab-button, button { font-size: 0.9rem; }
+            footer { font-size: 0.8rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <script>
+  atOptions = {
+    'key' : '1e6dd8f1d4565118e8eb4bf9fd2b359a',
+    'format' : 'iframe',
+    'height' : 250,
+    'width' : 300,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/1e6dd8f1d4565118e8eb4bf9fd2b359a/invoke.js"></script>
+    <div class="background-text">Status 404</div>
+    <div class="version-number">v3.12.8</div>
+    <div class="main-wrapper">
+        <div class="container">
+            <h1>Steganography Terminal</h1>
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab(event, 'encrypt')">تشفير</button>
+                <button class="tab-button" onclick="openTab(event, 'decrypt')">فك التشفير</button>
+            </div>
+            <div id="encrypt" class="content active">
+                <div class="form-group">
+                    <label for="visibleText">النص الظاهر</label>
+                    <textarea id="visibleText" placeholder="أدخل النص الذي سيراه الجميع..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="hiddenText">الرسالة السرية</label>
+                    <textarea id="hiddenText" placeholder="أدخل رسالتك السرية هنا..."></textarea>
+                </div>
+                <div class="button-group"><button onclick="handleEncryptClick()">تشفير</button></div>
+                <div class="result-group">
+                    <label for="encryptResult">النتيجة</label>
+                    <div class="result-container">
+                        <textarea id="encryptResult" readonly placeholder="النتيجة ستظهر هنا..."></textarea>
+                        <button id="copyBtn" class="copy-btn">نسخ</button>
+                    </div>
+                </div>
+            </div>
+            <div id="decrypt" class="content">
+                <div class="form-group">
+                    <label for="encryptedInput">الرسالة المشفرة</label>
+                    <textarea id="encryptedInput" placeholder="الصق الرسالة التي تلقيتها هنا..."></textarea>
+                </div>
+                <div class="button-group"><button onclick="handleDecryptClick()">فك التشفير</button></div>
+                <div class="result-group">
+                    <label for="decryptResult">النص السري المكشوف</label>
+                    <textarea id="decryptResult" readonly placeholder="النص السري سيظهر هنا..."></textarea>
+                </div>
+            </div>
+            <footer id="page-footer"></footer>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="privacyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>سياسة الخصوصية</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>هذه الأداة هي مشروع مفتوح المصدر متاح على GitHub للاستخدام العام. تم تصميمها للعمل بالكامل في متصفحك ولا تقوم بجمع أو إرسال أي بيانات للمستخدم إلى أي خادم.</p>
+                <p>يمكنك مراجعة الكود المصدري بنفسك على GitHub للتأكد من أمان وخصوصية الأداة. المطور غير مسؤول عن أي استخدام لهذه الأداة في أنشطة غير قانونية. باستخدامك لهذه الأداة، فإنك توافق على استخدامها بشكل مسؤول وعلى مسؤوليتك الخاصة.</p>
+            </div>
+            <div class="agreement-section">
+                <label><input type="checkbox" id="agreeCheckbox"> أنا أفهم وأوافق على الشروط</label>
+                <button id="confirmPolicy" disabled>متابعة</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal-content">
+            <h2 id="alertTitle">تنبيه</h2>
+            <div class="modal-body">
+                <p id="alertMessage"></p>
+            </div>
+            <button id="alertOkBtn">موافق</button>
+        </div>
+    </div>
+
+    <script>
+        const ZERO_WIDTH_SPACE = '\u200b';
+        const ZERO_WIDTH_NON_JOINER = '\u200c';
+        const SECRET_KEY = 'THIS_IS_A_FIXED_SECRET_KEY_FOR_THE_TOOL_!@#$%';
+        let actionCallback = null;
+
+        // --- Event Listeners Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const footer = document.getElementById('page-footer');
+            const today = new Date();
+            const dateString = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+            footer.innerHTML = `<p><a href="#" id="privacyLink">سياسة الخصوصية</a> | <a href="https://github.com/coder0999/Steganography-Terminal" target="_blank">المشاركة في تطوير الاداة</a></p><p>إنشاء و تطوير coder0999 | ${dateString}</p>`;
+
+            // Modals
+            const privacyModal = document.getElementById('privacyModal');
+            const alertModal = document.getElementById('alertModal');
+            const link = document.getElementById('privacyLink');
+            const closeBtn = document.getElementById('closeModal');
+            const checkbox = document.getElementById('agreeCheckbox');
+            const confirmBtn = document.getElementById('confirmPolicy');
+            const alertOkBtn = document.getElementById('alertOkBtn');
+
+            link.onclick = (e) => { e.preventDefault(); showModal(); };
+            closeBtn.onclick = () => { privacyModal.style.display = 'none'; };
+            alertOkBtn.onclick = () => { alertModal.style.display = 'none'; };
+            checkbox.onchange = () => { confirmBtn.disabled = !checkbox.checked; };
+            confirmBtn.onclick = () => {
+                localStorage.setItem('policyAgreed', 'true');
+                privacyModal.style.display = 'none';
+                if (actionCallback) {
+                    actionCallback();
+                    actionCallback = null;
+                }
+            };
+
+            // Copy Button
+            const copyBtn = document.getElementById('copyBtn');
+            copyBtn.onclick = () => {
+                const resultText = document.getElementById('encryptResult').value;
+                if(resultText) {
+                    navigator.clipboard.writeText(resultText).then(() => {
+                        showCustomAlert('تم نسخ النتيجة بنجاح!');
+                    }, () => {
+                        showCustomAlert('فشل النسخ.');
+                    });
+                }
+            };
+        });
+
+        // --- UI Functions ---
+        function showCustomAlert(message) {
+            document.getElementById('alertMessage').textContent = message;
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+
+        function showModal(callback) {
+            actionCallback = callback;
+            document.getElementById('privacyModal').style.display = 'flex';
+        }
+
+        function handleEncryptClick() {
+            if (localStorage.getItem('policyAgreed') === 'true') {
+                encrypt();
+            } else {
+                showModal(encrypt);
+            }
+        }
+
+        function handleDecryptClick() {
+            if (localStorage.getItem('policyAgreed') === 'true') {
+                decrypt();
+            } else {
+                showModal(decrypt);
+            }
+        }
+
+        function openTab(evt, tabName) {
+            let i, content, tabButtons;
+            content = document.getElementsByClassName("content");
+            for (i = 0; i < content.length; i++) { content[i].style.display = "none"; }
+            tabButtons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabButtons.length; i++) { tabButtons[i].className = tabButtons[i].className.replace(" active", ""); }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // --- Core Logic ---
+        function textToBinary(text) {
+            return text.split('').map(char => char.charCodeAt(0).toString(2).padStart(16, '0')).join('');
+        }
+
+        function binaryToText(binary) {
+            let text = '';
+            if (binary.length % 16 !== 0) { return "[Corruption Detected]"; }
+            for (let i = 0; i < binary.length; i += 16) {
+                const byte = binary.substr(i, 16);
+                if (byte.length === 16) { text += String.fromCharCode(parseInt(byte, 2)); }
+            }
+            return text;
+        }
+
+        function complexScramble(binaryString, key) {
+            let substituted = '';
+            for (let i = 0; i < binaryString.length; i++) {
+                const binaryChar = binaryString[i];
+                const keyChar = key.charCodeAt(i % key.length);
+                const newBit = (parseInt(binaryChar) ^ (keyChar % 2)).toString();
+                substituted += newBit;
+            }
+            let arr = substituted.split('');
+            let seed = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            for (let i = arr.length - 1; i > 0; i--) {
+                seed = (seed * 9301 + 49297) % 233280;
+                const j = Math.floor((seed / 233280.0) * i);
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.join('');
+        }
+
+        function complexUnscramble(scrambledBinaryString, key) {
+            let arr = scrambledBinaryString.split('');
+            let seed = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const shuffles = [];
+            for (let i = arr.length - 1; i > 0; i--) {
+                seed = (seed * 9301 + 49297) % 233280;
+                const j = Math.floor((seed / 233280.0) * i);
+                shuffles.push(j);
+            }
+            for (let i = 1; i < arr.length; i++) {
+                const j = shuffles.pop();
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            const untransposed = arr.join('');
+            let originalBinary = '';
+            for (let i = 0; i < untransposed.length; i++) {
+                const binaryChar = untransposed[i];
+                const keyChar = key.charCodeAt(i % key.length);
+                const oldBit = (parseInt(binaryChar) ^ (keyChar % 2)).toString();
+                originalBinary += oldBit;
+            }
+            return originalBinary;
+        }
+
+        function encrypt() {
+            const visibleText = document.getElementById('visibleText').value;
+            const hiddenText = document.getElementById('hiddenText').value;
+            if (!visibleText || !hiddenText) { showCustomAlert('النص الظاهر والرسالة السرية مطلوبان.'); return; }
+            const binaryHiddenText = textToBinary(hiddenText);
+            const encryptedBinary = complexScramble(binaryHiddenText, SECRET_KEY);
+            const zeroWidthString = encryptedBinary.split('').map(bit => bit === '0' ? ZERO_WIDTH_SPACE : ZERO_WIDTH_NON_JOINER).join('');
+            const finalResult = visibleText + zeroWidthString;
+            document.getElementById('encryptResult').value = finalResult;
+        }
+
+        function decrypt() {
+            const message = document.getElementById('encryptedInput').value;
+            if (!message) { showCustomAlert('الرسالة المشفرة مطلوبة.'); return; }
+            const encryptedBinary = message.split('').map(char => {
+                if (char === ZERO_WIDTH_SPACE) return '0';
+                if (char === ZERO_WIDTH_NON_JOINER) return '1';
+                return '';
+            }).join('');
+            if (encryptedBinary.length === 0) {
+                 showCustomAlert('خطأ: لم يتم العثور على رسالة مخفية.');
+                 return;
+            }
+            const decryptedBinary = complexUnscramble(encryptedBinary, SECRET_KEY);
+            const revealedText = binaryToText(decryptedBinary);
+            if (revealedText === "[Corruption Detected]" || revealedText.includes('\uFFFD')){
+                 showCustomAlert('خطأ: فشل فك التشفير. قد تكون الرسالة تالفة أو تم إنشاؤها بأداة مختلفة.');
+            } else {
+                document.getElementById('decryptResult').value = revealedText;
+            }
+        }
+    </script>
+
+</body>
+</html>
